@@ -1,58 +1,26 @@
-name: SonarQube
+name: Build
 
 on:
-  pull_request:
   push:
-    branches: [ main ]
+    branches:
+      - main
+
 
 jobs:
-  sonar:
+  build:
+    name: Build
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v2
         with:
-          fetch-depth: 0
-
-      # Python is only used to run pytest if you have tests.
-      - name: Set up Python (optional)
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      # If you don't have Python deps, this still works (no caching needed).
-      - name: Install test tools (optional)
-        run: |
-          pip install -U pip
-          pip install pytest pytest-cov || true
-
-      # If you have tests under `tests/` and code under `src/`, this generates coverage.xml.
-      # If you DON'T have tests, keep the step; it will no-op and continue.
-      - name: Run tests & create coverage.xml (optional)
-        run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/src
-          pytest --maxfail=1 --disable-warnings --cov=src --cov-report=xml || true
-
-      # Cache Sonar analyzers (speeds up repeat runs)
-      - name: Cache Sonar analyzers
-        uses: actions/cache@v4
-        with:
-          path: ~/.sonar/cache
-          key: ${{ runner.os }}-sonar-${{ hashFiles('**/sonar-project.properties') }}
-          restore-keys: ${{ runner.os }}-sonar-
-
-      # Install lightweight SonarScanner CLI (no Docker)
-      - name: Install SonarScanner CLI
-        run: |
-          VER=5.0.1.3006
-          curl -sSL -o scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${VER}-linux.zip
-          unzip -q scanner.zip
-          echo "$PWD/sonar-scanner-${VER}-linux/bin" >> $GITHUB_PATH
-
-      - name: SonarQube Scan
-        run: sonar-scanner
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+      - uses: sonarsource/sonarqube-scan-action@master
         env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      # If you wish to fail your job when the Quality Gate is red, uncomment the
+      # following lines. This would typically be used to fail a deployment.
+      # - uses: sonarsource/sonarqube-quality-gate-action@master
+      #   timeout-minutes: 5
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
