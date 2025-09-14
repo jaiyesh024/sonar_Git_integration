@@ -48,5 +48,5 @@ jobs:
       - name: SonarQube Scan
         run: sonar-scanner
         env:
-          SONAR_HOST_URL: '${{ secrets.SONAR_HOST_URL }}'
+          SONAR_HOST_URL: https://550b58f057f5.ngrok-free.app
           SONAR_TOKEN: '${{ secrets.SONAR_TOKEN }}'
